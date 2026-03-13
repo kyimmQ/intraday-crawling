@@ -92,9 +92,9 @@ def read_message(msg: str) -> TickData:
         raw_symbol = L[1]
         symbol = raw_symbol[2:] if raw_symbol.startswith("S#") else raw_symbol
 
-        # 2. Extract Server Timestamp (Index 99 is epoch in ms)
+        # 2. Extract Server Timestamp (Index -1 is epoch in ms)
         try:
-            tm = datetime.fromtimestamp(int(L[99]) / 1000.0).isoformat()
+            tm = datetime.fromtimestamp(int(L[-1]) / 1000.0).isoformat()
         except:
             tm = datetime.now().isoformat()
 
