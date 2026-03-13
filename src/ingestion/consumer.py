@@ -37,11 +37,12 @@ BATCH_TIMEOUT = 2  # seconds
 
 import pyarrow.feather as feather
 import pandas as pd
+from dataclass import TickData
 
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
-def write_batch(symbol, date_str, messages):
+def write_batch(symbol: str, date_str: str, messages: list[TickData]):
     if not messages:
         return
 
@@ -50,7 +51,7 @@ def write_batch(symbol, date_str, messages):
 
     file_path = os.path.join(dir_path, f"{date_str}.fea")
 
-    df_new = pd.DataFrame(messages)
+    df_new = pd.DataFrame([msg.to_dict() for msg in messages])
 
     # Append mode: read existing, concat, write
     if os.path.exists(file_path):
@@ -68,7 +69,7 @@ def write_batch(symbol, date_str, messages):
 
 from datetime import datetime
 
-def read_message(msg):
+def read_message(msg: str) -> TickData:
     """
     Optimized parser for pipe-delimited message from SSI.
     Uses descriptive field names for downstream processing.
@@ -77,13 +78,13 @@ def read_message(msg):
 
     # Ensure the message is long enough to contain our target data
     if len(L) < 100:
-        return None
+        return TickData()
 
     # Fast casting helpers
-    def to_float(val):
+    def to_float(val: str | None) -> float:
         return float(val) if val else 0.0
 
-    def to_int(val):
+    def to_int(val: str | None) -> int:
         return int(val) if val else 0
 
     try:
@@ -93,9 +94,9 @@ def read_message(msg):
 
         # 2. Extract Server Timestamp (Index 99 is epoch in ms)
         try:
-            tm = datetime.fromtimestamp(int(L[99]) / 1000.0)
+            tm = datetime.fromtimestamp(int(L[99]) / 1000.0).isoformat()
         except:
-            tm = datetime.now()
+            tm = datetime.now().isoformat()
 
         # 3. Match Data & Stats
         match_price = to_float(L[42]) / 1000
@@ -132,42 +133,42 @@ def read_message(msg):
         foreign_room = to_int(L[65]) if len(L) > 65 else 0
 
         # Construct and return the dictionary
-        return {
-            'timestamp': tm.isoformat(),
-            'symbol': symbol,
+        return TickData(
+            timestamp=tm,
+            symbol=symbol,
 
             # Match & Market Stats
-            'match_price': match_price,
-            'match_volume': match_volume,
-            'total_volume': total_volume,
-            'high_price': high_price,
-            'low_price': low_price,
-            'price_change': price_change,
-            'price_change_percent': price_change_percent,
+            match_price=match_price,
+            match_volume=match_volume,
+            total_volume=total_volume,
+            high_price=high_price,
+            low_price=low_price,
+            price_change=price_change,
+            price_change_percent=price_change_percent,
 
             # Limits
-            'ceiling_price': ceiling_price,
-            'floor_price': floor_price,
-            'reference_price': reference_price,
+            ceiling_price=ceiling_price,
+            floor_price=floor_price,
+            reference_price=reference_price,
 
             # Order Book - Bids
-            'bid_price_1': bid_price_1, 'bid_volume_1': bid_volume_1,
-            'bid_price_2': bid_price_2, 'bid_volume_2': bid_volume_2,
-            'bid_price_3': bid_price_3, 'bid_volume_3': bid_volume_3,
+            bid_price_1=bid_price_1, bid_volume_1=bid_volume_1,
+            bid_price_2=bid_price_2, bid_volume_2=bid_volume_2,
+            bid_price_3=bid_price_3, bid_volume_3=bid_volume_3,
 
             # Order Book - Asks
-            'ask_price_1': ask_price_1, 'ask_volume_1': ask_volume_1,
-            'ask_price_2': ask_price_2, 'ask_volume_2': ask_volume_2,
-            'ask_price_3': ask_price_3, 'ask_volume_3': ask_volume_3,
+            ask_price_1=ask_price_1, ask_volume_1=ask_volume_1,
+            ask_price_2=ask_price_2, ask_volume_2=ask_volume_2,
+            ask_price_3=ask_price_3, ask_volume_3=ask_volume_3,
 
             # Foreigner trading
-            'foreign_buy_volume': foreign_buy_volume,
-            'foreign_sell_volume': foreign_sell_volume,
-            'foreign_room': foreign_room
-        }
+            foreign_buy_volume=foreign_buy_volume,
+            foreign_sell_volume=foreign_sell_volume,
+            foreign_room=foreign_room
+        )
 
     except Exception as e:
-        return None
+        return TickData()
 
 
 # In[5]:
@@ -220,11 +221,11 @@ async def run_consumer():
                 # Parse message using read_message
                 data = read_message(raw_msg)
 
-                if data is None:
+                if data is None or data.symbol == "":
                     continue
 
-                symbol = data.get('symbol')
-                timestamp = data.get('timestamp')
+                symbol = data.symbol
+                timestamp = data.timestamp
 
                 # Determine date string
                 try:
@@ -238,7 +239,7 @@ async def run_consumer():
                     batches[key] = []
 
                 # Add ID for tracking
-                data['msg_id'] = str(msg_id)
+                data.msg_id = str(msg_id)
                 batches[key].append(data)
 
             # Write to disk
