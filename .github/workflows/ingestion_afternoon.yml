@@ -1,14 +1,12 @@
 name: Afternoon Data Ingestion
 
 on:
-  schedule:
-    - cron: '55 5 * * *'  # 12:55 PM GMT+7 is 05:55 UTC
   workflow_dispatch:
 
 jobs:
   ingest_afternoon:
     runs-on: ubuntu-latest
-    timeout-minutes: 125  # Runs until 15:00 GMT+7 (approx 125 mins from 12:55 PM)
+    timeout-minutes: 125 # Runs until 15:00 GMT+7 (approx 125 mins from 12:55 PM)
 
     services:
       redis:
@@ -28,7 +26,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
