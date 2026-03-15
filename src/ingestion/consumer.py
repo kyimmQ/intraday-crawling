@@ -99,32 +99,32 @@ def read_message(msg: str) -> TickData:
             tm = datetime.now().isoformat()
 
         # 3. Match Data & Stats
-        match_price = to_float(L[42]) / 1000
+        match_price = to_float(L[42])
         match_volume = to_int(L[43])
-        high_price = to_float(L[44]) / 1000
-        low_price = to_float(L[46]) / 1000
-        price_change = to_float(L[52]) / 1000
+        high_price = to_float(L[44])
+        low_price = to_float(L[46])
+        price_change = to_float(L[52])
         price_change_percent = to_float(L[53])
         total_volume = to_int(L[54])
 
         # 4. Limits & Reference
-        ceiling_price = to_float(L[59]) / 1000
-        floor_price = to_float(L[60]) / 1000
-        reference_price = to_float(L[61]) / 1000
+        ceiling_price = to_float(L[59])
+        floor_price = to_float(L[60])
+        reference_price = to_float(L[61])
 
         # 5. Order Book Top 3 (Bid: 2-7, Ask: 22-27)
-        bid_price_1 = to_float(L[2]) / 1000
+        bid_price_1 = to_float(L[2])
         bid_volume_1 = to_int(L[3])
-        bid_price_2 = to_float(L[4]) / 1000
+        bid_price_2 = to_float(L[4])
         bid_volume_2 = to_int(L[5])
-        bid_price_3 = to_float(L[6]) / 1000
+        bid_price_3 = to_float(L[6])
         bid_volume_3 = to_int(L[7])
 
-        ask_price_1 = to_float(L[22]) / 1000
+        ask_price_1 = to_float(L[22])
         ask_volume_1 = to_int(L[23])
-        ask_price_2 = to_float(L[24]) / 1000
+        ask_price_2 = to_float(L[24])
         ask_volume_2 = to_int(L[25])
-        ask_price_3 = to_float(L[26]) / 1000
+        ask_price_3 = to_float(L[26])
         ask_volume_3 = to_int(L[27])
 
         # 6. Foreigner flow
