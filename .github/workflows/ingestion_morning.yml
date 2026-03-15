@@ -1,6 +1,8 @@
 name: Morning Data Ingestion
 
 on:
+  schedule:
+    - cron: "40 1 * * 1-5" # 8:40 AM GMT+7 (Monday-Friday)
   workflow_dispatch:
 
 jobs:

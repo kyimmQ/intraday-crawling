@@ -1,6 +1,8 @@
 name: Afternoon Data Ingestion
 
 on:
+  schedule:
+    - cron: "55 5 * * 1-5" # 12:55 PM GMT+7 (Monday-Friday)
   workflow_dispatch:
 
 jobs:
