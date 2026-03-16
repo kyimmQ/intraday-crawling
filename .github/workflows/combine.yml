@@ -31,7 +31,7 @@ jobs:
           pip install pandas pyarrow
 
       - name: Download Morning Ingestion Data
-        uses: dawidd6/action-download-artifact@v3
+        uses: dawidd6/action-download-artifact@v6
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: ingestion_morning.yml
@@ -39,7 +39,7 @@ jobs:
           path: ./data/morning
 
       - name: Download Afternoon Ingestion Data
-        uses: dawidd6/action-download-artifact@v3
+        uses: dawidd6/action-download-artifact@v6
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: ingestion_afternoon.yml
