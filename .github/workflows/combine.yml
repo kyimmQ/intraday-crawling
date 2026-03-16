@@ -7,6 +7,10 @@ on:
     types:
       - completed
 
+permissions:
+  actions: read
+  contents: read
+
 jobs:
   combine_data:
     runs-on: ubuntu-latest
@@ -27,16 +31,20 @@ jobs:
           pip install pandas pyarrow
 
       - name: Download Morning Ingestion Data
-        uses: dawidd6/action-download-artifact@v3
+        uses: dawidd6/action-download-artifact@v6
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: ingestion_morning.yml
+          workflow_conclusion: ""
           name: morning-ingestion-data
           path: ./data/morning
 
       - name: Download Afternoon Ingestion Data
-        uses: dawidd6/action-download-artifact@v3
+        uses: dawidd6/action-download-artifact@v6
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: ingestion_afternoon.yml
+          workflow_conclusion: ""
           name: afternoon-ingestion-data
           path: ./data/afternoon
 
