@@ -32,6 +32,7 @@ jobs:
           workflow: ingestion_morning.yml
           name: morning-ingestion-data
           path: ./data/morning
+          if_no_artifact_found: warn
 
       - name: Download Afternoon Ingestion Data
         uses: dawidd6/action-download-artifact@v3
@@ -39,6 +40,7 @@ jobs:
           workflow: ingestion_afternoon.yml
           name: afternoon-ingestion-data
           path: ./data/afternoon
+          if_no_artifact_found: warn
 
       - name: Combine Data
         run: |
