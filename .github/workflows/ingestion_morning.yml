@@ -36,12 +36,9 @@ jobs:
         env:
           REDIS_URL: redis://localhost:6379
         run: |
-          # Run for 195 minutes (11700 seconds), then automatically terminate
-          timeout 195m python src/ingestion/producer.py &
-          timeout 195m python src/ingestion/consumer.py &
+          python src/ingestion/producer.py &
+          python src/ingestion/consumer.py &
 
-          # Wait for the timeout to finish the processes.
-          # The || true catches the timeout exit code so the step turns Green!
           wait || true
 
       - name: Upload output files
