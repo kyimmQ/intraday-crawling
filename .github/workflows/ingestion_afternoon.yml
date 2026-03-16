@@ -6,7 +6,6 @@ on:
 jobs:
   ingest_afternoon:
     runs-on: ubuntu-latest
-    timeout-minutes: 125 # Runs until 15:00 GMT+7 (approx 125 mins from 12:55 PM)
 
     services:
       redis:
@@ -46,12 +45,9 @@ jobs:
         env:
           REDIS_URL: redis://localhost:6379
         run: |
-          # Run for 120 minutes (7200 seconds), then automatically terminate
-          timeout 120m ./src/ingestion/producer &
-          timeout 120m python src/ingestion/consumer.py &
+          ./src/ingestion/producer &
+          python src/ingestion/consumer.py &
 
-          # Wait for the timeout to finish the processes.
-          # The || true catches the timeout exit code so the step turns Green!
           wait || true
 
       - name: Upload output files
