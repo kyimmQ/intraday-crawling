@@ -1,14 +1,11 @@
 name: Morning Data Ingestion
 
 on:
-  schedule:
-    - cron: "40 1 * * 1-5" # 8:40 AM GMT+7 (Monday-Friday)
   workflow_dispatch:
 
 jobs:
   ingest_morning:
     runs-on: ubuntu-latest
-    timeout-minutes: 200 # Runs until 12:00 PM GMT+7 (200 mins from 8:40 AM)
 
     services:
       redis:
@@ -39,12 +36,9 @@ jobs:
         env:
           REDIS_URL: redis://localhost:6379
         run: |
-          # Run for 195 minutes (11700 seconds), then automatically terminate
-          timeout 195m python src/ingestion/producer.py &
-          timeout 195m python src/ingestion/consumer.py &
+          python src/ingestion/producer.py &
+          python src/ingestion/consumer.py &
 
-          # Wait for the timeout to finish the processes.
-          # The || true catches the timeout exit code so the step turns Green!
           wait || true
 
       - name: Upload output files
