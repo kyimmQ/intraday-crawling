@@ -35,6 +35,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: ingestion_morning.yml
+          workflow_conclusion: ""
           name: morning-ingestion-data
           path: ./data/morning
 
@@ -43,6 +44,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           workflow: ingestion_afternoon.yml
+          workflow_conclusion: ""
           name: afternoon-ingestion-data
           path: ./data/afternoon
 
