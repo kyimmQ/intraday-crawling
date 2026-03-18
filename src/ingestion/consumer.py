@@ -89,8 +89,18 @@ def read_message(msg: str) -> TickData:
         # Basic Info
         symbol = data.get("Symbol", "")
 
-        # Extract timestamp (using current time as fallback since format from Time/TradingDate may vary)
-        tm = datetime.now().isoformat()
+        # Extract timestamp (TradingDate: "DD/MM/YYYY", Time: "HH:MM:SS")
+        trading_date_str = data.get("TradingDate", "")
+        time_str = data.get("Time", "")
+
+        try:
+            if trading_date_str and time_str:
+                dt = datetime.strptime(f"{trading_date_str} {time_str}", "%d/%m/%Y %H:%M:%S")
+                tm = dt.isoformat()
+            else:
+                tm = datetime.now().isoformat()
+        except:
+            tm = datetime.now().isoformat()
 
         # Match Data & Stats
         match_price = to_float(data.get("LastPrice"))
