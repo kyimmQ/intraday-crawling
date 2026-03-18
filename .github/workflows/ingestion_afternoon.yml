@@ -38,16 +38,14 @@ jobs:
           go-version: "1.24.x"
 
       - name: Build Go Producer
-        working-directory: src/ingestion/producer_go
+        working-directory: src/ingestion
         run: go build -o producer producer.go
 
       - name: Run Ingestion
         env:
           REDIS_URL: redis://localhost:6379
-          CONSUMER_ID: ${{ secrets.CONSUMER_ID }}
-          CONSUMER_SECRET: ${{ secrets.CONSUMER_SECRET }}
         run: |
-          ./src/ingestion/producer_go/producer &
+          ./src/ingestion/producer &
           python src/ingestion/consumer.py &
 
           wait || true

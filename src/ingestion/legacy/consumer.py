@@ -21,10 +21,10 @@ import redis.asyncio as redis
 
 # Config
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-STREAM_KEY = "market:ticks"
-GROUP_NAME = "ingestion_group"
-CONSUMER_NAME = "consumer_1"
-DATA_DIR = "./data/pubsub"  # Pub/Sub crawl path
+STREAM_KEY = "market:ticks_legacy"
+GROUP_NAME = "ingestion_group_legacy"
+CONSUMER_NAME = "consumer_1_legacy"
+DATA_DIR = "./data/pubsub_legacy"  # Pub/Sub crawl path
 
 BATCH_SIZE = 500
 BATCH_TIMEOUT = 2  # seconds
