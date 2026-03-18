@@ -71,100 +71,73 @@ from datetime import datetime
 
 def read_message(msg: str) -> TickData:
     """
-    Optimized parser for pipe-delimited message from SSI.
-    Uses descriptive field names for downstream processing.
+    Parses JSON message from the Go producer (XTradeData).
     """
-    L = msg.split('|')
-
-    # Ensure the message is long enough to contain our target data
-    if len(L) < 100:
+    try:
+        data = json.loads(msg)
+    except json.JSONDecodeError:
         return TickData()
 
     # Fast casting helpers
-    def to_float(val: str | None) -> float:
-        return float(val) if val else 0.0
-
-    def to_int(val: str | None) -> int:
-        return int(val) if val else 0
+    def to_float(val) -> float:
+        try:
+            return float(val) if val is not None else 0.0
+        except:
+            return 0.0
 
     try:
-        # 1. Basic Info
-        raw_symbol = L[1]
-        symbol = raw_symbol[2:] if raw_symbol.startswith("S#") else raw_symbol
+        # Basic Info
+        symbol = data.get("Symbol", "")
 
-        # 2. Extract Server Timestamp (Index -1 is epoch in ms)
+        # Extract timestamp (TradingDate: "DD/MM/YYYY", Time: "HH:MM:SS")
+        trading_date_str = data.get("TradingDate", "")
+        time_str = data.get("Time", "")
+
         try:
-            tm = datetime.fromtimestamp(int(L[-1]) / 1000.0).isoformat()
+            if trading_date_str and time_str:
+                dt = datetime.strptime(f"{trading_date_str} {time_str}", "%d/%m/%Y %H:%M:%S")
+                tm = dt.isoformat()
+            else:
+                tm = datetime.now().isoformat()
         except:
             tm = datetime.now().isoformat()
 
-        # 3. Match Data & Stats
-        match_price = to_float(L[42])
-        match_volume = to_int(L[43])
-        high_price = to_float(L[44])
-        low_price = to_float(L[46])
-        price_change = to_float(L[52])
-        price_change_percent = to_float(L[53])
-        total_volume = to_int(L[54])
+        # Match Data & Stats
+        match_price = to_float(data.get("LastPrice"))
+        match_volume = to_float(data.get("LastVol"))
+        total_volume = to_float(data.get("TotalVol"))
+        total_value = to_float(data.get("TotalVal"))
+        high_price = to_float(data.get("Highest"))
+        low_price = to_float(data.get("Lowest"))
+        price_change = to_float(data.get("Change"))
+        price_change_percent = to_float(data.get("RatioChange"))
 
-        # 4. Limits & Reference
-        ceiling_price = to_float(L[59])
-        floor_price = to_float(L[60])
-        reference_price = to_float(L[61])
+        # Limits & Reference
+        ceiling_price = to_float(data.get("Ceiling"))
+        floor_price = to_float(data.get("Floor"))
+        reference_price = to_float(data.get("RefPrice"))
 
-        # 5. Order Book Top 3 (Bid: 2-7, Ask: 22-27)
-        bid_price_1 = to_float(L[2])
-        bid_volume_1 = to_int(L[3])
-        bid_price_2 = to_float(L[4])
-        bid_volume_2 = to_int(L[5])
-        bid_price_3 = to_float(L[6])
-        bid_volume_3 = to_int(L[7])
-
-        ask_price_1 = to_float(L[22])
-        ask_volume_1 = to_int(L[23])
-        ask_price_2 = to_float(L[24])
-        ask_volume_2 = to_int(L[25])
-        ask_price_3 = to_float(L[26])
-        ask_volume_3 = to_int(L[27])
-
-        # 6. Foreigner flow
-        foreign_buy_volume = to_int(L[48])
-        foreign_sell_volume = to_int(L[50])
-        foreign_room = to_int(L[65]) if len(L) > 65 else 0
+        # Market State
+        trading_status = str(data.get("TradingStatus", ""))
+        side = str(data.get("Side", ""))
 
         # Construct and return the dictionary
         return TickData(
             timestamp=tm,
             symbol=symbol,
-
-            # Match & Market Stats
             match_price=match_price,
             match_volume=match_volume,
             total_volume=total_volume,
+            total_value=total_value,
             high_price=high_price,
             low_price=low_price,
             price_change=price_change,
             price_change_percent=price_change_percent,
-
-            # Limits
             ceiling_price=ceiling_price,
             floor_price=floor_price,
             reference_price=reference_price,
-
-            # Order Book - Bids
-            bid_price_1=bid_price_1, bid_volume_1=bid_volume_1,
-            bid_price_2=bid_price_2, bid_volume_2=bid_volume_2,
-            bid_price_3=bid_price_3, bid_volume_3=bid_volume_3,
-
-            # Order Book - Asks
-            ask_price_1=ask_price_1, ask_volume_1=ask_volume_1,
-            ask_price_2=ask_price_2, ask_volume_2=ask_volume_2,
-            ask_price_3=ask_price_3, ask_volume_3=ask_volume_3,
-
-            # Foreigner trading
-            foreign_buy_volume=foreign_buy_volume,
-            foreign_sell_volume=foreign_sell_volume,
-            foreign_room=foreign_room
+            trading_status=trading_status,
+            side=side
         )
 
     except Exception as e:
@@ -211,9 +184,9 @@ async def run_consumer():
 
             for msg_id, fields in stream_data:
                 # Get raw message - handle potential missing key
-                raw_msg_bytes = fields.get(b'raw')
+                raw_msg_bytes = fields.get(b'data')
                 if not raw_msg_bytes:
-                    print(f"Skipping message {msg_id} - no raw data")
+                    print(f"Skipping message {msg_id} - no data field")
                     continue
 
                 raw_msg = str(raw_msg_bytes.decode('utf-8'))
