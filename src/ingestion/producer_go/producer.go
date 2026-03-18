@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/joho/godotenv"
 	"github.com/kyimmQ/go-fcdata/client"
 	"github.com/kyimmQ/go-fcdata/models"
 	"github.com/kyimmQ/go-fcdata/signalr"
@@ -29,6 +30,7 @@ func getEnv(key, fallback string) string {
 
 func main() {
 	// Read consumer credentials from environment variables
+	_ = godotenv.Load() // Load .env file if it exists, but ignore errors
 	consumerID := getEnv("CONSUMER_ID", "")
 	consumerSecret := getEnv("CONSUMER_SECRET", "")
 	if consumerID == "" || consumerSecret == "" {

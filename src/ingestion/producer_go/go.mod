@@ -3,7 +3,8 @@ module producer
 go 1.24.3
 
 require (
-	github.com/kyimmQ/go-fcdata v0.0.0-20260318000946-c4ecaef43962
+	github.com/joho/godotenv v1.5.1
+	github.com/kyimmQ/go-fcdata v0.0.0-20260318015458-624c67ce3feb
 	github.com/redis/go-redis/v9 v9.18.0
 )
 
