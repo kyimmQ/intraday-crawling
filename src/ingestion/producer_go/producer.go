@@ -94,7 +94,17 @@ func main() {
 				log.Printf("Error marshaling XTradeData: %v", err)
 				return
 			}
-			msgChan <- string(jsonBytes)
+
+			// Non-blocking send to prevent stalling the SignalR loop
+			select {
+			case <-ctx.Done():
+				return
+			case msgChan <- string(jsonBytes):
+				// Successfully enqueued
+			default:
+				// Channel is full; drop the message to avoid blocking SignalR receive loop.
+				log.Printf("Dropping message due to full msgChan buffer")
+			}
 		}
 	}
 
