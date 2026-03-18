@@ -85,6 +85,12 @@ def read_message(msg: str) -> TickData:
         except:
             return 0.0
 
+    def to_int(val) -> int:
+        try:
+            return int(float(val)) if val is not None else 0
+        except:
+            return 0
+
     try:
         # Basic Info
         symbol = data.get("Symbol", "")
@@ -104,8 +110,8 @@ def read_message(msg: str) -> TickData:
 
         # Match Data & Stats
         match_price = to_float(data.get("LastPrice"))
-        match_volume = to_float(data.get("LastVol"))
-        total_volume = to_float(data.get("TotalVol"))
+        match_volume = to_int(data.get("LastVol"))
+        total_volume = to_int(data.get("TotalVol"))
         total_value = to_float(data.get("TotalVal"))
         high_price = to_float(data.get("Highest"))
         low_price = to_float(data.get("Lowest"))

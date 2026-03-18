@@ -6,8 +6,8 @@ class TickData:
     timestamp: str = datetime.fromtimestamp(0).isoformat()
     symbol: str = ""
     match_price: float = 0.0
-    match_volume: float = 0.0
-    total_volume: float = 0.0
+    match_volume: int = 0
+    total_volume: int = 0
     total_value: float = 0.0
     high_price: float = 0.0
     low_price: float = 0.0
