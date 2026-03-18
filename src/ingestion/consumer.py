@@ -21,10 +21,9 @@ import redis.asyncio as redis
 
 # Config
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
-STREAM_KEY = "market:ticks"
 GROUP_NAME = "ingestion_group"
 CONSUMER_NAME = "consumer_1"
-DATA_DIR = "./data/pubsub"  # Pub/Sub crawl path
+BASE_DATA_DIR = "./data/pubsub"  # Pub/Sub crawl path
 
 BATCH_SIZE = 500
 BATCH_TIMEOUT = 2  # seconds
@@ -37,16 +36,17 @@ BATCH_TIMEOUT = 2  # seconds
 
 import pyarrow.feather as feather
 import pandas as pd
-from core.dataclass import TickData
+from core.dataclass import TickData, SnapshotData
+from typing import Union
 
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)
 
-def write_batch(symbol: str, date_str: str, messages: list[TickData]):
+def write_batch(symbol: str, date_str: str, messages: list[Union[TickData, SnapshotData]], data_dir: str):
     if not messages:
         return
 
-    dir_path = os.path.join(DATA_DIR, symbol)
+    dir_path = os.path.join(data_dir, symbol)
     ensure_dir(dir_path)
 
     file_path = os.path.join(dir_path, f"{date_str}.fea")
@@ -78,7 +78,6 @@ def read_message(msg: str) -> TickData:
     except json.JSONDecodeError:
         return TickData()
 
-    # Fast casting helpers
     def to_float(val) -> float:
         try:
             return float(val) if val is not None else 0.0
@@ -147,34 +146,140 @@ def read_message(msg: str) -> TickData:
         )
 
     except Exception as e:
+        import logging
+        logging.error(f"Error parsing XTrade message: {e}")
         return TickData()
+
+
+def read_snapshot_message(msg: str) -> SnapshotData:
+    """
+    Parses JSON message from the Go producer (XSnapshotData).
+    """
+    try:
+        data = json.loads(msg)
+    except json.JSONDecodeError:
+        return SnapshotData()
+
+    def to_float(val) -> float:
+        try:
+            return float(val) if val is not None else 0.0
+        except:
+            return 0.0
+
+    try:
+        symbol = data.get("Symbol", "")
+        trading_date_str = data.get("TradingDate", "")
+        time_str = data.get("Time", "")
+
+        try:
+            if trading_date_str and time_str:
+                dt = datetime.strptime(f"{trading_date_str} {time_str}", "%d/%m/%Y %H:%M:%S")
+                tm = dt.isoformat()
+            else:
+                tm = datetime.now().isoformat()
+        except:
+            tm = datetime.now().isoformat()
+
+        return SnapshotData(
+            timestamp=tm,
+            symbol=symbol,
+            isin=str(data.get("Isin", "")),
+            ceiling=to_float(data.get("Ceiling")),
+            floor=to_float(data.get("Floor")),
+            ref_price=to_float(data.get("RefPrice")),
+            open=to_float(data.get("Open")),
+            close=to_float(data.get("Close")),
+            high=to_float(data.get("High")),
+            low=to_float(data.get("Low")),
+            avg_price=to_float(data.get("AvgPrice")),
+            prior_val=to_float(data.get("PriorVal")),
+            last_price=to_float(data.get("LastPrice")),
+            change=to_float(data.get("Change")),
+            ratio_change=to_float(data.get("RatioChange")),
+            est_matched_price=to_float(data.get("EstMatchedPrice")),
+            last_vol=to_float(data.get("LastVol")),
+            total_val=to_float(data.get("TotalVal")),
+            total_vol=to_float(data.get("TotalVol")),
+            bid_price_1=to_float(data.get("BidPrice1")),
+            bid_vol_1=to_float(data.get("BidVol1")),
+            bid_price_2=to_float(data.get("BidPrice2")),
+            bid_vol_2=to_float(data.get("BidVol2")),
+            bid_price_3=to_float(data.get("BidPrice3")),
+            bid_vol_3=to_float(data.get("BidVol3")),
+            bid_price_4=to_float(data.get("BidPrice4")),
+            bid_vol_4=to_float(data.get("BidVol4")),
+            bid_price_5=to_float(data.get("BidPrice5")),
+            bid_vol_5=to_float(data.get("BidVol5")),
+            bid_price_6=to_float(data.get("BidPrice6")),
+            bid_vol_6=to_float(data.get("BidVol6")),
+            bid_price_7=to_float(data.get("BidPrice7")),
+            bid_vol_7=to_float(data.get("BidVol7")),
+            bid_price_8=to_float(data.get("BidPrice8")),
+            bid_vol_8=to_float(data.get("BidVol8")),
+            bid_price_9=to_float(data.get("BidPrice9")),
+            bid_vol_9=to_float(data.get("BidVol9")),
+            bid_price_10=to_float(data.get("BidPrice10")),
+            bid_vol_10=to_float(data.get("BidVol10")),
+            ask_price_1=to_float(data.get("AskPrice1")),
+            ask_vol_1=to_float(data.get("AskVol1")),
+            ask_price_2=to_float(data.get("AskPrice2")),
+            ask_vol_2=to_float(data.get("AskVol2")),
+            ask_price_3=to_float(data.get("AskPrice3")),
+            ask_vol_3=to_float(data.get("AskVol3")),
+            ask_price_4=to_float(data.get("AskPrice4")),
+            ask_vol_4=to_float(data.get("AskVol4")),
+            ask_price_5=to_float(data.get("AskPrice5")),
+            ask_vol_5=to_float(data.get("AskVol5")),
+            ask_price_6=to_float(data.get("AskPrice6")),
+            ask_vol_6=to_float(data.get("AskVol6")),
+            ask_price_7=to_float(data.get("AskPrice7")),
+            ask_vol_7=to_float(data.get("AskVol7")),
+            ask_price_8=to_float(data.get("AskPrice8")),
+            ask_vol_8=to_float(data.get("AskVol8")),
+            ask_price_9=to_float(data.get("AskPrice9")),
+            ask_vol_9=to_float(data.get("AskVol9")),
+            ask_price_10=to_float(data.get("AskPrice10")),
+            ask_vol_10=to_float(data.get("AskVol10")),
+            market_id=str(data.get("MarketId", "")),
+            exchange=str(data.get("Exchange", "")),
+            trading_session=str(data.get("TradingSession", "")),
+            trading_status=str(data.get("TradingStatus", ""))
+        )
+    except Exception as e:
+        import logging
+        logging.error(f"Error parsing XSnapshot message: {e}")
+        return SnapshotData()
 
 
 # In[5]:
 
 
-async def run_consumer():
+async def run_consumer(datatype: str = "XTrade"):
     r = redis.from_url(REDIS_URL)
+
+    stream_key = f"market:ticks:{datatype.lower()}"
+    data_dir = os.path.join(BASE_DATA_DIR, datatype.lower())
+    group_name = f"{GROUP_NAME}_{datatype.lower()}"
 
     # Create consumer group if not exists
     try:
-        await r.xgroup_create(STREAM_KEY, GROUP_NAME, id="0", mkstream=True)
-        print(f"Created group {GROUP_NAME}")
+        await r.xgroup_create(stream_key, group_name, id="0", mkstream=True)
+        print(f"Created group {group_name} for {stream_key}")
     except Exception as e:
         if "BUSYGROUP" in str(e):
-            print(f"Group {GROUP_NAME} already exists")
+            print(f"Group {group_name} already exists")
         else:
             print(f"Error creating group: {e}")
 
-    print("Consumer started...")
+    print(f"Consumer started for {datatype} on stream {stream_key}...")
 
     while True:
         try:
             # Read messages
             messages = await r.xreadgroup(
-                GROUP_NAME,
+                group_name,
                 CONSUMER_NAME,
-                {STREAM_KEY: ">"},
+                {stream_key: ">"},
                 count=BATCH_SIZE,
                 block=BATCH_TIMEOUT * 1000
             )
@@ -197,8 +302,11 @@ async def run_consumer():
 
                 raw_msg = str(raw_msg_bytes.decode('utf-8'))
 
-                # Parse message using read_message
-                data = read_message(raw_msg)
+                # Parse message based on datatype
+                if datatype == "XTrade":
+                    data = read_message(raw_msg)
+                else:
+                    data = read_snapshot_message(raw_msg)
 
                 if data is None or data.symbol == "":
                     continue
@@ -223,13 +331,13 @@ async def run_consumer():
 
             # Write to disk
             for (symbol, date_str), msgs in batches.items():
-                write_batch(symbol, date_str, msgs)
+                write_batch(symbol, date_str, msgs, data_dir)
                 print(f"Wrote {len(msgs)} messages for {symbol} on {date_str}")
 
             # Acknowledge
             msg_ids = [msg_id for msg_id, _ in stream_data]
             if msg_ids:
-                await r.xack(STREAM_KEY, GROUP_NAME, *msg_ids)
+                await r.xack(stream_key, group_name, *msg_ids)
 
         except Exception as e:
             print(f"Error: {e}")
@@ -249,4 +357,9 @@ async def run_consumer():
 
 # Run the consumer
 if __name__ == '__main__':
-    asyncio.run(run_consumer())
+    import argparse
+    parser = argparse.ArgumentParser(description="Consumer for market data.")
+    parser.add_argument("--datatype", type=str, default="XTrade", choices=["XTrade", "XSnapshot"], help="Datatype to consume")
+    args = parser.parse_args()
+
+    asyncio.run(run_consumer(args.datatype))
