@@ -37,7 +37,7 @@ BATCH_TIMEOUT = 2  # seconds
 
 import pyarrow.feather as feather
 import pandas as pd
-from dataclass import TickData
+from core.dataclass import TickData
 
 def ensure_dir(path):
     os.makedirs(path, exist_ok=True)

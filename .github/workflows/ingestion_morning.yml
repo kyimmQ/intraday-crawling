@@ -38,7 +38,7 @@ jobs:
           go-version: "1.24.x"
 
       - name: Build Go Producer
-        working-directory: src/ingestion/producer_go
+        working-directory: src/ingestion/fetcher
         run: go build -o producer producer.go
 
       - name: Run Ingestion
@@ -47,8 +47,8 @@ jobs:
           CONSUMER_ID: ${{ secrets.CONSUMER_ID }}
           CONSUMER_SECRET: ${{ secrets.CONSUMER_SECRET }}
         run: |
-          ./src/ingestion/producer_go/producer &
-          python src/ingestion/consumer.py &
+          ./src/ingestion/fetcher/producer &
+          python run.py consumer &
 
           wait || true
 

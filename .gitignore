@@ -10,3 +10,5 @@ pycache__/
 
 # Go compiled binary
 producer
+
+.env

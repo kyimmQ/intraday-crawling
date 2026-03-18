@@ -50,7 +50,7 @@ jobs:
 
       - name: Combine Data
         run: |
-          python src/ingestion/combine.py
+          python run.py combiner
 
       - name: Upload Combined Data
         uses: actions/upload-artifact@v4

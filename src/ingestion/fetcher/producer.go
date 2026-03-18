@@ -3,9 +3,11 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/joho/godotenv"
@@ -81,15 +83,20 @@ func main() {
 
 	streamClient.OnConnected = func() {
 		log.Println("SignalR Connected!")
-		for _, stock := range stocks {
-			channel := "X-TRADE:" + stock
-			streamClient.SwitchChannel(channel)
-			log.Printf("Subscribed to %s", channel)
+		// join stock with a comma
+		stockList := strings.Join(stocks, "-")
+		channel := "X-TRADE:" + stockList
+		err := streamClient.SwitchChannel(channel)
+		if err != nil {
+			log.Printf("Error joining channel: %v", err)
+		} else {
+			log.Printf("Joined channel: %s", channel)
 		}
 	}
 
 	streamClient.OnData = func(msg models.BroadcastMessage) {
 		// Only process XTradeData
+		fmt.Printf("Received message: %s\n", msg)
 		if tradeData, ok := msg.Data.(models.XTradeData); ok {
 			jsonBytes, err := json.Marshal(tradeData)
 			if err != nil {
