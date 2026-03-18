@@ -1,10 +1,10 @@
-name: Morning Data Ingestion
+name: Legacy Afternoon Data Ingestion
 
 on:
   workflow_dispatch:
 
 jobs:
-  ingest_morning:
+  ingest_afternoon_legacy:
     runs-on: ubuntu-latest
 
     services:
@@ -37,18 +37,16 @@ jobs:
         with:
           go-version: "1.24.x"
 
-      - name: Build Go Producer
-        working-directory: src/ingestion/producer_go
+      - name: Build Legacy Go Producer
+        working-directory: src/ingestion/legacy
         run: go build -o producer producer.go
 
-      - name: Run Ingestion
+      - name: Run Legacy Ingestion
         env:
           REDIS_URL: redis://localhost:6379
-          CONSUMER_ID: ${{ secrets.CONSUMER_ID }}
-          CONSUMER_SECRET: ${{ secrets.CONSUMER_SECRET }}
         run: |
-          ./src/ingestion/producer_go/producer &
-          python src/ingestion/consumer.py &
+          ./src/ingestion/legacy/producer &
+          python src/ingestion/legacy/consumer.py &
 
           wait || true
 
@@ -56,5 +54,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: morning-ingestion-data
-          path: ./data/pubsub/
+          name: afternoon-ingestion-data-legacy
+          path: ./data/pubsub_legacy/

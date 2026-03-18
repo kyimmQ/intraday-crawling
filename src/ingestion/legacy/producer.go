@@ -15,7 +15,7 @@ import (
 
 var (
 	redisURL  = getEnv("REDIS_URL", "redis://localhost:6379")
-	streamKey = "market:ticks"
+	streamKey = "market:ticks_legacy"
 	wsURL     = "wss://iboard-pushstream.ssi.com.vn/realtime"
 	stocks    = []string{"41I1G3000", "41I1G4000"}
 )
