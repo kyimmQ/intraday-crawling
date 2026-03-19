@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	redisURL  = getEnv("REDIS_URL", "redis://localhost:6379")
-	stocks    = []string{"41I1G3000", "41I1G4000"}
+	redisURL = getEnv("REDIS_URL", "redis://localhost:6379")
+	stocks   = []string{"41I1G3000", "41I1G4000"}
 )
 
 func getEnv(key, fallback string) string {
@@ -113,18 +113,18 @@ func main() {
 	}
 
 	streamClient.OnData = func(msg models.BroadcastMessage) {
-		fmt.Printf("Received message: %s\n", msg)
 
 		var jsonBytes []byte
 		var err error
 		var processed bool
 
-		if dataType == "XTrade" {
+		switch dataType {
+		case "XTrade":
 			if tradeData, ok := msg.Data.(models.XTradeData); ok {
 				jsonBytes, err = json.Marshal(tradeData)
 				processed = true
 			}
-		} else if dataType == "XSnapshot" {
+		case "XSnapshot":
 			if snapshotData, ok := msg.Data.(models.XSnapshotData); ok {
 				jsonBytes, err = json.Marshal(snapshotData)
 				processed = true
