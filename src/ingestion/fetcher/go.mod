@@ -4,7 +4,7 @@ go 1.24.3
 
 require (
 	github.com/joho/godotenv v1.5.1
-	github.com/kyimmQ/go-fcdata v0.0.0-20260318174900-9c3df37c3d8f
+	github.com/kyimmQ/go-fcdata v0.0.5
 	github.com/redis/go-redis/v9 v9.18.0
 )
 

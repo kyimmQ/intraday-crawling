@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -18,9 +19,8 @@ import (
 )
 
 var (
-	redisURL  = getEnv("REDIS_URL", "redis://localhost:6379")
-	streamKey = "market:ticks"
-	stocks    = []string{"41I1G3000", "41I1G4000"}
+	redisURL = getEnv("REDIS_URL", "redis://localhost:6379")
+	stocks   = []string{"41I1G3000", "41I1G4000"}
 )
 
 func getEnv(key, fallback string) string {
@@ -31,6 +31,17 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
+	var dataType string
+	flag.StringVar(&dataType, "datatype", "XTrade", "Data type to stream (XTrade or XSnapshot)")
+	flag.Parse()
+
+	if dataType != "XTrade" && dataType != "XSnapshot" {
+		log.Fatalf("Invalid datatype. Must be XTrade or XSnapshot.")
+	}
+
+	streamKey := fmt.Sprintf("market:ticks:%s", strings.ToLower(dataType))
+	log.Printf("Starting producer for datatype %s using stream %s", dataType, streamKey)
+
 	// Read consumer credentials from environment variables
 	_ = godotenv.Load() // Load .env file if it exists, but ignore errors
 	consumerID := getEnv("CONSUMER_ID", "")
@@ -76,7 +87,7 @@ func main() {
 	msgChan := make(chan string, 10000)
 
 	// Start Redis worker
-	go redisWorker(ctx, rdb, msgChan)
+	go redisWorker(ctx, rdb, msgChan, streamKey)
 
 	// Connect to SignalR using the obtained token
 	streamClient := signalr.NewClient("https://fc-datahub.ssi.com.vn/v2.0/signalr", tokenResponse)
@@ -85,7 +96,14 @@ func main() {
 		log.Println("SignalR Connected!")
 		// join stock with a comma
 		stockList := strings.Join(stocks, "-")
-		channel := "X-TRADE:" + stockList
+
+		var channel string
+		if dataType == "XTrade" {
+			channel = "X-TRADE:" + stockList
+		} else {
+			channel = "X:" + stockList
+		}
+
 		err := streamClient.SwitchChannel(channel)
 		if err != nil {
 			log.Printf("Error joining channel: %v", err)
@@ -95,25 +113,42 @@ func main() {
 	}
 
 	streamClient.OnData = func(msg models.BroadcastMessage) {
-		// Only process XTradeData
-		fmt.Printf("Received message: %s\n", msg)
-		if tradeData, ok := msg.Data.(models.XTradeData); ok {
-			jsonBytes, err := json.Marshal(tradeData)
-			if err != nil {
-				log.Printf("Error marshaling XTradeData: %v", err)
-				return
-			}
 
-			// Non-blocking send to prevent stalling the SignalR loop
-			select {
-			case <-ctx.Done():
-				return
-			case msgChan <- string(jsonBytes):
-				// Successfully enqueued
-			default:
-				// Channel is full; drop the message to avoid blocking SignalR receive loop.
-				log.Printf("Dropping message due to full msgChan buffer")
+		var jsonBytes []byte
+		var err error
+		var processed bool
+
+		switch dataType {
+		case "XTrade":
+			if tradeData, ok := msg.Data.(models.XTradeData); ok {
+				jsonBytes, err = json.Marshal(tradeData)
+				processed = true
 			}
+		case "XSnapshot":
+			if snapshotData, ok := msg.Data.(models.XSnapshotData); ok {
+				jsonBytes, err = json.Marshal(snapshotData)
+				processed = true
+			}
+		}
+
+		if !processed {
+			return
+		}
+
+		if err != nil {
+			log.Printf("Error marshaling data: %v", err)
+			return
+		}
+
+		// Non-blocking send to prevent stalling the SignalR loop
+		select {
+		case <-ctx.Done():
+			return
+		case msgChan <- string(jsonBytes):
+			// Successfully enqueued
+		default:
+			// Channel is full; drop the message to avoid blocking SignalR receive loop.
+			log.Printf("Dropping message due to full msgChan buffer")
 		}
 	}
 
@@ -131,7 +166,7 @@ func main() {
 	log.Println("Exiting application...")
 }
 
-func redisWorker(ctx context.Context, rdb *redis.Client, msgChan <-chan string) {
+func redisWorker(ctx context.Context, rdb *redis.Client, msgChan <-chan string, streamKey string) {
 	for {
 		select {
 		case <-ctx.Done():

@@ -47,8 +47,13 @@ jobs:
           CONSUMER_ID: ${{ secrets.CONSUMER_ID }}
           CONSUMER_SECRET: ${{ secrets.CONSUMER_SECRET }}
         run: |
-          ./src/ingestion/fetcher/producer &
-          python run.py consumer &
+          # Start XTrade ingestion
+          ./src/ingestion/fetcher/producer -datatype XTrade &
+          python run.py consumer --datatype XTrade &
+
+          # Start XSnapshot ingestion
+          ./src/ingestion/fetcher/producer -datatype XSnapshot &
+          python run.py consumer --datatype XSnapshot &
 
           wait || true
 
