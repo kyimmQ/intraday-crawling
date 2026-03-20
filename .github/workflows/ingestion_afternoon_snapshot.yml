@@ -1,10 +1,10 @@
-name: Afternoon Data Ingestion
+name: Afternoon Snapshot Data Ingestion
 
 on:
   workflow_dispatch:
 
 jobs:
-  ingest_afternoon:
+  ingest_afternoon_snapshot:
     runs-on: ubuntu-latest
 
     services:
@@ -47,10 +47,6 @@ jobs:
           CONSUMER_ID: ${{ secrets.CONSUMER_ID }}
           CONSUMER_SECRET: ${{ secrets.CONSUMER_SECRET }}
         run: |
-          # Start XTrade ingestion
-          ./src/ingestion/fetcher/producer -datatype XTrade &
-          python run.py consumer --datatype XTrade &
-
           # Start XSnapshot ingestion
           ./src/ingestion/fetcher/producer -datatype XSnapshot &
           python run.py consumer --datatype XSnapshot &
@@ -61,5 +57,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: afternoon-ingestion-data
+          name: afternoon-snapshot-ingestion-data
           path: ./data/pubsub/

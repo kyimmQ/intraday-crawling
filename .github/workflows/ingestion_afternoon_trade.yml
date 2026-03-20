@@ -1,10 +1,10 @@
-name: Morning Data Ingestion
+name: Afternoon Trade Data Ingestion
 
 on:
   workflow_dispatch:
 
 jobs:
-  ingest_morning:
+  ingest_afternoon_trade:
     runs-on: ubuntu-latest
 
     services:
@@ -51,15 +51,11 @@ jobs:
           ./src/ingestion/fetcher/producer -datatype XTrade &
           python run.py consumer --datatype XTrade &
 
-          # Start XSnapshot ingestion
-          ./src/ingestion/fetcher/producer -datatype XSnapshot &
-          python run.py consumer --datatype XSnapshot &
-
           wait || true
 
       - name: Upload output files
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: morning-ingestion-data
+          name: afternoon-trade-ingestion-data
           path: ./data/pubsub/
