@@ -3,7 +3,7 @@ name: Combine Data Ingestion
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["Afternoon Data Ingestion"]
+    workflows: ["Afternoon Trade Data Ingestion", "Afternoon Snapshot Data Ingestion"]
     types:
       - completed
 
@@ -30,22 +30,40 @@ jobs:
           python -m pip install --upgrade pip
           pip install pandas pyarrow
 
-      - name: Download Morning Ingestion Data
+      - name: Download Morning Trade Data
         uses: dawidd6/action-download-artifact@v6
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: ingestion_morning.yml
+          workflow: ingestion_morning_trade.yml
           workflow_conclusion: ""
-          name: morning-ingestion-data
+          name: morning-trade-ingestion-data
           path: ./data/morning
 
-      - name: Download Afternoon Ingestion Data
+      - name: Download Morning Snapshot Data
         uses: dawidd6/action-download-artifact@v6
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow: ingestion_afternoon.yml
+          workflow: ingestion_morning_snapshot.yml
           workflow_conclusion: ""
-          name: afternoon-ingestion-data
+          name: morning-snapshot-ingestion-data
+          path: ./data/morning
+
+      - name: Download Afternoon Trade Data
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: ingestion_afternoon_trade.yml
+          workflow_conclusion: ""
+          name: afternoon-trade-ingestion-data
+          path: ./data/afternoon
+
+      - name: Download Afternoon Snapshot Data
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: ingestion_afternoon_snapshot.yml
+          workflow_conclusion: ""
+          name: afternoon-snapshot-ingestion-data
           path: ./data/afternoon
 
       - name: Combine Data
